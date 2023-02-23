@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"server-tic-tac/game"
 	"server-tic-tac/player"
-	"strconv"
+	"server-tic-tac/room"
 	"sync"
 )
 
@@ -46,81 +46,7 @@ func WSHandler(ws *websocket.Conn) {
 		p1 := waitingRoom[len(waitingRoom)-2]
 		waitingRoom = waitingRoom[:len(waitingRoom)-2]
 		mu.Unlock()
-		go startMatch(p, p1)
-	}
-}
-
-func startMatch(p2 *player.Player, p1 *player.Player) {
-	// default starts with X (player 1)
-	var isPlayerXTurn = true
-	//keeps record of the player (playerName -> []indexes)
-	var playerState = map[string]*player.Player{
-		p1.Name: p1,
-		p2.Name: p2,
-	}
-
-	for {
-		var payload game.Payload
-		if isPlayerXTurn {
-			isPlayerXTurn = true
-			if err := websocket.JSON.Receive(p1.Conn, &payload); err != nil {
-				log.Printf("%s disconnected", p1.Name)
-				p1.Conn.Close()
-				p2.SendMessage(&game.Payload{
-					MessageType: game.EXIT,
-					Content:     "OPPONENT LEFT GAME",
-					FromUser:    p1.Name,
-				})
-				//p2.Conn.Close()
-				return
-			}
-		} else {
-			isPlayerXTurn = false
-			if err := websocket.JSON.Receive(p2.Conn, &payload); err != nil {
-				log.Printf("%s disconnected", p2.Name)
-				p2.Conn.Close()
-				p1.SendMessage(&game.Payload{
-					MessageType: game.EXIT,
-					Content:     "OPPONENT LEFT GAME",
-					FromUser:    p2.Name,
-				})
-				//p1.Conn.Close()
-				return
-			}
-		}
-
-		switch payload.MessageType {
-		case game.MOVE:
-			/* Record move FROM player [X or 0];
-			* Example payload >> p1{MOVE, "9", "X"} or p2{MOVE, "4", "O"}
-			* Check winner
-			* Notify both players. Repeat until Winner or draw
-			 */
-			var p = playerState[payload.FromUser]
-			log.Printf("Player %v moved to index %v", p.Name, payload.Content)
-			gridIndex, _ := strconv.Atoi(payload.Content)
-			p.Vals = append(p.Vals, gridIndex)
-			if p.HasWon() {
-				p.SendMessage(&game.Payload{
-					MessageType: game.WIN,
-					Content:     "Congrats! You won! GAME OVER",
-				})
-				var playerLoser = p2
-				if !isPlayerXTurn {
-					playerLoser = p1
-				}
-				playerLoser.SendMessage(&game.Payload{
-					MessageType: game.LOSE,
-					Content:     "Sorry! You lost! GAME OVER",
-				})
-				return
-			}
-		default:
-			log.Println("Unknown command sent. Closing connections")
-			p1.Conn.Close()
-			p2.Conn.Close()
-			return
-		}
+		go room.StartMatch(p, p1)
 	}
 }
 
