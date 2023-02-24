@@ -53,25 +53,29 @@ func StartMatch(p2 *player.Player, p1 *player.Player) {
 		switch payload.MessageType {
 		case game.MOVE:
 			/* Record move FROM player [X or 0];
-			* Example payload >> p1{MOVE, "9", "X"} or p2{MOVE, "4", "O"}
-			* Check winner
-			* Notify both players. Repeat until Winner or draw
+			* Example payload >> p1{MOVE, "9", "X"} or p2{MOVE, "4", "O"},
+			* AS {messageType, Content, FromPlayer}
 			 */
 			var p = playerState[payload.FromUser]
 			log.Printf("Player %v moved to index %v", p.Name, payload.Content)
 			gridIndex, _ := strconv.Atoi(payload.Content)
 			p.Vals = append(p.Vals, gridIndex)
+
+			//forward to opponent
+			var opponent = p2
+			if !isPlayerXTurn {
+				opponent = p1
+			}
+			opponent.SendMessage(&payload)
+
+			//check winner
 			if p.HasWon() {
 				e := p.SendMessage(&game.Payload{
 					MessageType: game.WIN,
 					Content:     "Congrats! You won! GAME OVER",
 				})
 				handleError(p, e)
-				var loser = p2
-				if !isPlayerXTurn {
-					loser = p1
-				}
-				e = loser.SendMessage(&game.Payload{
+				e = opponent.SendMessage(&game.Payload{
 					MessageType: game.LOSE,
 					Content:     "Sorry! You lost! GAME OVER",
 				})

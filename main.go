@@ -16,13 +16,15 @@ var mu sync.RWMutex
 
 func WSHandler(ws *websocket.Conn) {
 	ws.MaxPayloadBytes = 1024
-	defer ws.Close()
+	//defer ws.Close()
 
 	//Store connected user to ActiveClients
 	p := new(player.Player)
 	p.Conn = ws
 	p.Vals = []int{}
+	mu.Lock()
 	waitingRoom = append(waitingRoom, p)
+	mu.Unlock()
 	log.Printf("Someone connected")
 
 	if len(waitingRoom)%2 != 0 {
@@ -34,6 +36,8 @@ func WSHandler(ws *websocket.Conn) {
 			FromUser:    player.X.String(),
 		})
 		log.Printf("Player X ready. Waiting for opponent")
+
+		//watch if connection is ALIVE
 	} else {
 		p.Name = player.O.String()
 		p.SendMessage(&game.Payload{
@@ -54,7 +58,7 @@ func main() {
 	port := "9876"
 
 	http.HandleFunc("/", func(writer http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(writer, "<p>This is a socket game server. Dial http://%s:9876/ws </p>", r.URL.Host)
+		fmt.Fprintf(writer, "<p>This is a socket game server. Dial ws://%s:9876/ws </p>", r.URL.Host)
 	})
 	http.Handle("/ws", websocket.Handler(WSHandler))
 
