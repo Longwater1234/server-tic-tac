@@ -9,7 +9,19 @@ import (
 )
 
 // StartMatch and update results until either disconnects or gameOver
-func StartMatch(p2 *player.Player, p1 *player.Player) {
+func StartMatch(p1 *player.Player, p2 *player.Player, done chan bool) {
+	p1.Name = "X"
+	p2.Name = "O"
+	eee := p1.SendMessage(&game.Payload{
+		MessageType: game.START,
+		Content:     "Make your move",
+		FromUser:    player.X.String(),
+	})
+	if eee != nil {
+		log.Println("first", eee)
+		done <- true
+	}
+
 	// default starts with X (player 1)
 	var isPlayerXTurn = true
 	//keeps record of the player (playerName -> []indexes)
@@ -23,15 +35,14 @@ func StartMatch(p2 *player.Player, p1 *player.Player) {
 		if isPlayerXTurn {
 			isPlayerXTurn = true
 			if err := websocket.JSON.Receive(p1.Conn, &payload); err != nil {
-				log.Printf("%s disconnected", p1.Name)
+				log.Printf("%s disconnected. Error :%v", p1.Name, err.Error())
 				p1.Conn.Close()
-				e := p2.SendMessage(&game.Payload{
+				p2.SendMessage(&game.Payload{
 					MessageType: game.EXIT,
 					Content:     "OPPONENT LEFT GAME",
 					FromUser:    p1.Name,
 				})
-				handleError(p2, e)
-				//p2.Conn.Close()
+				done <- true
 				return
 			}
 		} else {
@@ -39,13 +50,12 @@ func StartMatch(p2 *player.Player, p1 *player.Player) {
 			if err := websocket.JSON.Receive(p2.Conn, &payload); err != nil {
 				log.Printf("%s disconnected", p2.Name)
 				p2.Conn.Close()
-				e := p1.SendMessage(&game.Payload{
+				p1.SendMessage(&game.Payload{
 					MessageType: game.EXIT,
 					Content:     "OPPONENT LEFT GAME",
 					FromUser:    p2.Name,
 				})
-				handleError(p1, e)
-				//p1.Conn.Close()
+				done <- true
 				return
 			}
 		}
@@ -74,12 +84,12 @@ func StartMatch(p2 *player.Player, p1 *player.Player) {
 					MessageType: game.WIN,
 					Content:     "Congrats! You won! GAME OVER",
 				})
-				handleError(p, e)
+				handleError(p, e, done)
 				e = opponent.SendMessage(&game.Payload{
 					MessageType: game.LOSE,
 					Content:     "Sorry! You lost! GAME OVER",
 				})
-				handleError(p, e)
+				handleError(p, e, done)
 				return
 			}
 		default:
@@ -91,9 +101,10 @@ func StartMatch(p2 *player.Player, p1 *player.Player) {
 	}
 }
 
-func handleError(p *player.Player, err error) {
+func handleError(p *player.Player, err error, done chan bool) {
 	log.Printf("Player %v left. Error: %s", p.Name, err.Error())
 	if err != nil {
+		done <- true
 		p.Conn.Close()
 	}
 }

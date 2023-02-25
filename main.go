@@ -11,47 +11,55 @@ import (
 	"sync"
 )
 
+var GameMatch = make(chan *player.Player, 1)
 var waitingRoom []*player.Player
 var mu sync.RWMutex
 
 func WSHandler(ws *websocket.Conn) {
 	ws.MaxPayloadBytes = 1024
-	//defer ws.Close()
+	defer ws.Close()
+	done := make(chan bool)
 
-	//Store connected user to ActiveClients
 	p := new(player.Player)
 	p.Conn = ws
 	p.Vals = []int{}
-	mu.Lock()
-	waitingRoom = append(waitingRoom, p)
-	mu.Unlock()
-	log.Printf("Someone connected")
+	//p.Name == len(gameMatch) % 2
 
-	if len(waitingRoom)%2 != 0 {
-		//currentPlayer := "X"
-		p.Name = player.X.String()
-		p.SendMessage(&game.Payload{
-			MessageType: game.WELCOME,
-			Content:     "Welcome. You are player X. Waiting for opponent",
-			FromUser:    player.X.String(),
-		})
-		log.Printf("Player X ready. Waiting for opponent")
-
-		//watch if connection is ALIVE
+	var pieceType string
+	mu.RLock()
+	if len(waitingRoom)%2 == 0 {
+		pieceType = "X"
 	} else {
-		p.Name = player.O.String()
-		p.SendMessage(&game.Payload{
-			MessageType: game.WELCOME,
-			Content:     "Welcome. You are player O. Found opponent. Starting game",
-			FromUser:    player.O.String(),
-		})
-		log.Printf("Player O now ready. Starting game")
-		mu.Lock()
-		p1 := waitingRoom[len(waitingRoom)-2]
-		waitingRoom = waitingRoom[:len(waitingRoom)-2]
-		mu.Unlock()
-		go room.StartMatch(p, p1)
+		pieceType = "O"
 	}
+	mu.RUnlock()
+
+	err1 := p.SendMessage(&game.Payload{
+		MessageType: game.WELCOME,
+		Content:     fmt.Sprintf("Welcome. You are player %s.", pieceType),
+		FromUser:    pieceType,
+	})
+	if err1 != nil {
+		log.Println("ERROR IN WELCOME MESSAGE", err1)
+		ws.Close()
+	}
+	GameMatch <- p
+	log.Printf("Someone connected. Waiting room count: %d, cap %d", len(GameMatch), cap(GameMatch))
+	go func() {
+		p := <-GameMatch
+		mu.Lock()
+		waitingRoom = append(waitingRoom, p)
+		mu.Unlock()
+		if len(waitingRoom) == 2 {
+			log.Println("two players joined. Starting game")
+			log.Println("game starting")
+			room.StartMatch(waitingRoom[0], waitingRoom[1], done)
+			mu.Lock()
+			waitingRoom = waitingRoom[:0]
+			mu.Unlock()
+		}
+	}()
+	<-done
 }
 
 func main() {
