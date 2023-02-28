@@ -50,13 +50,10 @@ func WSHandler(ws *websocket.Conn) {
 		mu.Lock()
 		waitingRoom = append(waitingRoom, p)
 		mu.Unlock()
-		if len(waitingRoom) == 2 {
+		if len(waitingRoom) > 0 && len(waitingRoom)%2 == 0 {
 			log.Println("two players joined. Starting game")
 			log.Println("game starting")
 			room.StartMatch(waitingRoom[0], waitingRoom[1], done)
-			mu.Lock()
-			waitingRoom = waitingRoom[:0]
-			mu.Unlock()
 		}
 	}()
 	<-done
