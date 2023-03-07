@@ -11,7 +11,7 @@ import (
 	"sync"
 )
 
-var GameMatch = make(chan *player.Player, 1)
+var gameMatch = make(chan *player.Player, 1)
 var waitingRoom []*player.Player
 var mu sync.RWMutex
 
@@ -43,10 +43,10 @@ func WSHandler(ws *websocket.Conn) {
 		log.Println("ERROR IN WELCOME MESSAGE", err1)
 		ws.Close()
 	}
-	GameMatch <- p
-	log.Printf("Someone connected. Waiting room count: %d, cap %d", len(GameMatch), cap(GameMatch))
+	gameMatch <- p
+	log.Printf("Someone connected. Waiting room count: %d, cap %d", len(gameMatch), cap(gameMatch))
 	go func() {
-		p := <-GameMatch
+		p := <-gameMatch
 		mu.Lock()
 		waitingRoom = append(waitingRoom, p)
 		mu.Unlock()

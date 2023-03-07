@@ -15,7 +15,7 @@ func StartMatch(p1 *player.Player, p2 *player.Player, done chan bool) {
 	p1.Name = player.X.String()
 	p2.Name = player.O.String()
 
-	log.Printf("Address %+v", p1)
+	log.Println("Match began!")
 
 	err = p1.SendMessage(&game.Payload{
 		MessageType: game.START,
@@ -34,6 +34,11 @@ func StartMatch(p1 *player.Player, p2 *player.Player, done chan bool) {
 		FromUser:    player.O.String(),
 	})
 
+	if err != nil {
+		handleError(err, done)
+		return
+	}
+
 	// default starts with X (player 1)
 	var isPlayerXTurn = true
 
@@ -44,9 +49,9 @@ func StartMatch(p1 *player.Player, p2 *player.Player, done chan bool) {
 	}
 
 	for {
-	free:
 		var payload game.Payload
 		if isPlayerXTurn {
+			fmt.Println("Player 1 played")
 			if err := websocket.JSON.Receive(p1.Conn, &payload); err != nil {
 				log.Printf("%s disconnected. Error :%v", p1.Name, err.Error())
 				p1.Conn.Close()
@@ -58,8 +63,7 @@ func StartMatch(p1 *player.Player, p2 *player.Player, done chan bool) {
 				done <- true
 				return
 			}
-			fmt.Printf("%+v\n", payload)
-			if err := websocket.JSON.Send(p2.Conn, payload); err != nil {
+			if err := websocket.JSON.Send(p2.Conn, &payload); err != nil {
 				log.Printf("%s disconnected. Cause %+v", p2.Name, err.Error())
 				p2.Conn.Close()
 				p1.SendMessage(&game.Payload{
@@ -72,6 +76,7 @@ func StartMatch(p1 *player.Player, p2 *player.Player, done chan bool) {
 			}
 			isPlayerXTurn = false
 		} else {
+			fmt.Println("Player 2 played")
 			if err := websocket.JSON.Receive(p2.Conn, &payload); err != nil {
 				log.Printf("%s disconnected. Cause %+v", p2.Name, err.Error())
 				p2.Conn.Close()
@@ -83,8 +88,8 @@ func StartMatch(p1 *player.Player, p2 *player.Player, done chan bool) {
 				done <- true
 				return
 			}
-			fmt.Printf("%+v\n", payload)
-			if err := websocket.JSON.Send(p1.Conn, payload); err != nil {
+
+			if err := websocket.JSON.Send(p1.Conn, &payload); err != nil {
 				log.Printf("%s disconnected. Cause %+v", p1.Name, err.Error())
 				p1.Conn.Close()
 				p2.SendMessage(&game.Payload{
@@ -98,29 +103,25 @@ func StartMatch(p1 *player.Player, p2 *player.Player, done chan bool) {
 			isPlayerXTurn = true
 		}
 
+		fmt.Printf("Payload: %+v\n", payload)
 		//RECORD THE MOVE
-		log.Printf("I am free")
 		var p = playerState[payload.FromUser]
-		log.Printf("AddressTwo 2 %+v", p)
 		gridIndex, _ := strconv.Atoi(payload.Content)
 		p.Vals = append(p.Vals, gridIndex)
 		if checkWinner(p2, p1, done) {
-			done <- true
 			return
 		}
-		goto free
 	}
 }
 
 func handleError(err error, done chan bool) {
-	if err != nil {
-		log.Printf("%v", err)
-		done <- true
-	}
+	log.Printf("handleError %v", err)
+	done <- true
 }
 
 func checkWinner(p, opponent *player.Player, done chan bool) bool {
 	if p.HasWon() {
+		log.Println("We got a winner")
 		err := p.SendMessage(&game.Payload{
 			MessageType: game.WIN,
 			Content:     "Congrats! You won! GAME OVER",
@@ -131,6 +132,7 @@ func checkWinner(p, opponent *player.Player, done chan bool) bool {
 			Content:     "Sorry! You lost! GAME OVER",
 		})
 		handleError(err, done)
+		done <- true
 		return true
 	}
 	return false
