@@ -30,8 +30,8 @@ func TestPlayer_HasWon(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &Player{
-				Name: tt.fields.Name,
-				Vals: tt.fields.Vals,
+				Name:  tt.fields.Name,
+				Cells: tt.fields.Vals,
 			}
 			if got := p.HasWon(); got != tt.want {
 				t.Errorf("HasWon() = %v, want %v", got, tt.want)

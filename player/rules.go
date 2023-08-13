@@ -5,12 +5,13 @@
 package player
 
 import (
-	"server-tic-tac/game"
-
 	"golang.org/x/exp/slices"
 	"golang.org/x/net/websocket"
+	"log"
+	"server-tic-tac/game"
 )
 
+// all possible winning grid patterns
 var winningPatterns = [][]int{
 	{0, 1, 2},
 	{3, 4, 5},
@@ -22,11 +23,12 @@ var winningPatterns = [][]int{
 	{2, 4, 6},
 }
 
-// Player of the game, only 2 per game
+// Player of the game, only 2 allowed per session
 type Player struct {
-	Conn *websocket.Conn
-	Name string // Name can only be X or O
-	Vals []int  // cell indexes clicked by player
+	Conn  *websocket.Conn // client connection
+	Name  string          // Name can only be X or O
+	Cells []int           // cell indexes used by this player
+	Dead  chan bool       // whether player has disconnected
 }
 
 type SymbolGame int
@@ -46,24 +48,27 @@ func (s SymbolGame) String() string {
 	return "unknown"
 }
 
-// HasWon returns true if player has won.
-func (p *Player) HasWon() bool {
-	var markedCells = p.Vals
+// HasWon returns true if Player has won. If YES, also return winning cells
+func (p *Player) HasWon() (bool, []int) {
+	var markedCells = p.Cells
 	if len(markedCells) < 3 {
-		return false
+		return false, []int{}
 	}
 
 	for i := 0; i < len(winningPatterns); i++ {
 		arr := winningPatterns[i]
 		if slices.Contains(markedCells, arr[0]) && slices.Contains(markedCells, arr[1]) && slices.Contains(markedCells, arr[2]) {
-			return true
+			return true, arr
 		}
 	}
-	return false
+	return false, []int{}
 }
 
-// SendMessage to given player in JSON
-func (p *Player) SendMessage(payload *game.Payload) error {
+// SendMessage in JSON to this player
+func (p *Player) SendMessage(payload *game.Payload) {
 	err := websocket.JSON.Send(p.Conn, payload)
-	return err
+	if err != nil {
+		log.Printf("SendMessage to %s. Cause %+v", p.Name, err)
+		p.Dead <- true
+	}
 }
