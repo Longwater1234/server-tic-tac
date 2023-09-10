@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"runtime"
+	"os"
 	"server-tic-tac/game"
 	"server-tic-tac/player"
 	"server-tic-tac/room"
@@ -16,7 +16,7 @@ import (
 var numPlayers atomic.Uint32             // total number of LIVE players
 var lobby = make(chan *player.Player, 2) // waiting room for players
 
-// wsHandler handles 1 client per connection
+// wsHandler assigns name to player and redirects to Lobby
 func wsHandler(ws *websocket.Conn) {
 	ws.MaxPayloadBytes = 1024
 	var clientIp = ws.Request().RemoteAddr
@@ -39,14 +39,16 @@ func wsHandler(ws *websocket.Conn) {
 	lobby <- p
 
 	log.Println("Someone connected", clientIp, "Total players:", numPlayers.Load())
-	<-p.Dead
+	<-p.Dead                   //block until player leaves
 	numPlayers.Add(^uint32(0)) // minus 1
 	log.Println(clientIp, p.Name, "just left the game. Total players:", numPlayers.Load())
 }
 
 func main() {
-	port := "9876"
-	runtime.GOMAXPROCS(runtime.NumCPU() / 2)
+	port := os.Getenv("PORT")
+	if port != "" {
+		port = "9876"
+	}
 
 	http.HandleFunc("/", func(writer http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(writer, `<p>This is a socket game server. Dial ws://%s:%s/ws </p>`, r.URL.Host, port)

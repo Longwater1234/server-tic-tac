@@ -112,7 +112,7 @@ func checkEndGame(p, opponent *player.Player, payload *game.Payload) bool {
 	return false
 }
 
-// checks if `p` has won against `opponent`. if TRUE, notify both and exit match
+// checks if `p` has won against `opponent`. if TRUE, notify both.
 func checkWinner(p, opponent *player.Player) bool {
 	if ok, winningCells := p.HasWon(); ok {
 		p.SendMessage(&game.Payload{
@@ -131,7 +131,7 @@ func checkWinner(p, opponent *player.Player) bool {
 	return false
 }
 
-// checks if the match is in a Draw. if TRUE, notify both and exit match
+// checks if the match is in a Draw. if TRUE, notify both.
 func checkDraw(p, opponent *player.Player) bool {
 	totalUsed := len(p.Cells) + len(opponent.Cells)
 	if totalUsed == 9 {
