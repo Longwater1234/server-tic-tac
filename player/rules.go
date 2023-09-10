@@ -56,9 +56,9 @@ func (p *Player) HasWon() (bool, []int) {
 	}
 
 	for i := 0; i < len(winningPatterns); i++ {
-		arr := winningPatterns[i]
-		if slices.Contains(markedCells, arr[0]) && slices.Contains(markedCells, arr[1]) && slices.Contains(markedCells, arr[2]) {
-			return true, arr
+		row := winningPatterns[i]
+		if slices.Contains(markedCells, row[0]) && slices.Contains(markedCells, row[1]) && slices.Contains(markedCells, row[2]) {
+			return true, row
 		}
 	}
 	return false, []int{}
@@ -68,7 +68,7 @@ func (p *Player) HasWon() (bool, []int) {
 func (p *Player) SendMessage(payload *game.Payload) {
 	err := websocket.JSON.Send(p.Conn, payload)
 	if err != nil {
-		log.Printf("SendMessage to %s. Cause %+v", p.Name, err)
+		log.Printf("Failed to sendMessage to %s. Cause %+v", p.Name, err)
 		p.Dead <- true
 	}
 }

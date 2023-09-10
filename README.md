@@ -11,8 +11,9 @@ package manager.
     ```bash
     go build --ldflags="-s -w"
     ```
-- Done. Now you can simply execute the binary `./server-tic-tac`.
+- Set ENV variable for PORT which the server will listen to.
 - By default, it will run on port 9876.
+- Done. Now you can simply execute the binary `./server-tic-tac`.
 - To stop the server anytime, just press `CTRL` + `C`, or quit the terminal window
 
 
