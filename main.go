@@ -39,8 +39,8 @@ func wsHandler(ws *websocket.Conn) {
 	lobby <- p
 
 	log.Println("Someone connected", clientIp, "Total players:", numPlayers.Load())
-	<-p.Dead                   //block until player leaves
-	numPlayers.Add(^uint32(0)) // minus 1
+	<-p.Dead
+	numPlayers.Add(^uint32(0)) // if player exits, minus 1
 	log.Println(clientIp, p.Name, "just left the game. Total players:", numPlayers.Load())
 }
 
@@ -78,7 +78,7 @@ func listenForJoins() {
 		})
 
 		//start the match in new goroutine
-		go func() {
+		go func(p1 *player.Player, p2 *player.Player) {
 			gameOver := make(chan bool, 1)
 			room.StartMatch(p1, p2, gameOver)
 			//block until match ends
@@ -86,6 +86,6 @@ func listenForJoins() {
 			log.Println("🔴 GAME OVER!")
 			p1.Dead <- true
 			p2.Dead <- true
-		}()
+		}(p1, p2)
 	}
 }
