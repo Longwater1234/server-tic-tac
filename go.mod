@@ -1,8 +1,8 @@
 module server-tic-tac
 
-go 1.19
+go 1.21
 
 require (
-	golang.org/x/exp v0.0.0-20230213192124-5e25df0256eb
-	golang.org/x/net v0.14.0
+	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
+	golang.org/x/net v0.25.0
 )
