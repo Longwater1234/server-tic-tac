@@ -8,6 +8,7 @@ import (
 	"server-tic-tac/game"
 	"server-tic-tac/player"
 	"server-tic-tac/room"
+	"strconv"
 	"sync/atomic"
 
 	"golang.org/x/net/websocket"
@@ -45,10 +46,11 @@ func wsHandler(ws *websocket.Conn) {
 }
 
 func main() {
-	port := os.Getenv("PORT")
-	if port != "" {
-		port = "9876"
+	portNum, err := strconv.Atoi(os.Getenv("PORT"))
+	if err != nil {
+		portNum = 9876
 	}
+	port := strconv.Itoa(portNum)
 
 	http.HandleFunc("/", func(writer http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(writer, `<p>This is a socket game server. Dial ws://%s:%s/ws </p>`, r.URL.Host, port)
