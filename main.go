@@ -28,7 +28,6 @@ func wsHandler(ws *websocket.Conn) {
 		Cells: []int32{},
 		Dead:  make(chan bool, 1),
 	}
-	defer close(p.Dead)
 
 	//for each pair joining, the 1st will be player X
 	if numPlayers.Load()%2 == 0 {
