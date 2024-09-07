@@ -40,7 +40,7 @@ func wsHandler(ws *websocket.Conn) {
 	lobby <- p
 
 	log.Println("Someone connected", clientIp, "Total players:", numPlayers.Load())
-	<-p.Dead
+	<-p.Dead                   //block until player leaves or match ends
 	numPlayers.Add(^uint32(0)) // if player exits, minus 1
 	log.Println(clientIp, p.Name, "just left the game. Total players:", numPlayers.Load())
 }
