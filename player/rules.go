@@ -5,14 +5,15 @@
 package player
 
 import (
-	"golang.org/x/exp/slices"
-	"golang.org/x/net/websocket"
 	"log"
 	"server-tic-tac/game"
+
+	"golang.org/x/exp/slices"
+	"golang.org/x/net/websocket"
 )
 
 // all possible winning grid patterns
-var winningPatterns = [][]int{
+var winningPatterns = [][]int32{
 	{0, 1, 2},
 	{3, 4, 5},
 	{6, 7, 8},
@@ -27,7 +28,7 @@ var winningPatterns = [][]int{
 type Player struct {
 	Conn  *websocket.Conn // client connection
 	Name  string          // Name can only be X or O
-	Cells []int           // cell indexes used by this player
+	Cells []int32         // cell indexes used by this player
 	Dead  chan bool       // whether player has disconnected
 }
 
@@ -49,10 +50,10 @@ func (s SymbolGame) String() string {
 }
 
 // HasWon returns true if Player has won. If YES, also return winning cells
-func (p *Player) HasWon() (bool, []int) {
+func (p *Player) HasWon() (bool, []int32) {
 	var markedCells = p.Cells
 	if len(markedCells) < 3 {
-		return false, []int{}
+		return false, []int32{}
 	}
 
 	for i := 0; i < len(winningPatterns); i++ {
@@ -61,7 +62,7 @@ func (p *Player) HasWon() (bool, []int) {
 			return true, row
 		}
 	}
-	return false, []int{}
+	return false, []int32{}
 }
 
 // SendMessage in JSON to this player

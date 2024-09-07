@@ -41,5 +41,5 @@ type Payload struct {
 	MessageType  MessageType `json:"messageType"`  // what's the message about
 	Content      string      `json:"content"`      // the main content
 	FromUser     string      `json:"fromUser"`     // source user of message
-	WinningCells []int       `json:"winningCells"` // grid cells which caused win
+	WinningCells []int32     `json:"winningCells"` // grid cells which caused win
 }

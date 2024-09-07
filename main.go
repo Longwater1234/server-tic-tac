@@ -25,7 +25,7 @@ func wsHandler(ws *websocket.Conn) {
 
 	p := &player.Player{
 		Conn:  ws,
-		Cells: []int{},
+		Cells: []int32{},
 		Dead:  make(chan bool, 1),
 	}
 	defer close(p.Dead)

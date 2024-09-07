@@ -9,7 +9,7 @@ import "testing"
 func TestPlayer_HasWon(t *testing.T) {
 	type fields struct {
 		Name string
-		Vals []int
+		Vals []int32
 	}
 	tests := []struct {
 		name   string
@@ -18,12 +18,12 @@ func TestPlayer_HasWon(t *testing.T) {
 	}{
 		{
 			name:   "Won",
-			fields: fields{Name: "X", Vals: []int{2, 3, 5, 8}},
+			fields: fields{Name: "X", Vals: []int32{2, 3, 5, 8}},
 			want:   true,
 		},
 		{
 			name:   "NotWon",
-			fields: fields{Name: "X", Vals: []int{0, 3, 8}},
+			fields: fields{Name: "X", Vals: []int32{0, 3, 8}},
 			want:   false,
 		},
 	}

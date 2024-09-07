@@ -101,8 +101,12 @@ func StartMatch(p1 *player.Player, p2 *player.Player, gameOver chan bool) {
 
 // Records the move by Player `p` against `opponent`, then returns match status, whether it's Over
 func checkEndGame(p, opponent *player.Player, payload *game.Payload) bool {
-	gridIndex, _ := strconv.Atoi(payload.Content)
-	p.Cells = append(p.Cells, gridIndex)
+	gridIndex, err := strconv.Atoi(payload.Content)
+	if err != nil {
+		log.Println(err)
+		return true
+	}
+	p.Cells = append(p.Cells, int32(gridIndex))
 	if checkWinner(p, opponent) {
 		return true
 	}
