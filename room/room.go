@@ -30,7 +30,7 @@ func StartMatch(p1 *player.Player, p2 *player.Player, gameOver chan bool) {
 
 	for {
 		if isPlayerXTurn {
-			//IT'S PLAYER 1'S TURN
+			//==================  IT'S PLAYER 1'S TURN ==================
 			var payload game.Payload
 			if err := websocket.JSON.Receive(p1.Conn, &payload); err != nil {
 				log.Println(p1.Name, "disconnected. Cause:", err.Error())
@@ -63,7 +63,7 @@ func StartMatch(p1 *player.Player, p2 *player.Player, gameOver chan bool) {
 			}
 			isPlayerXTurn = false
 		} else {
-			//IT'S PLAYER 2'S TURN
+			//================== IT'S PLAYER 2'S TURN ==================
 			var payload game.Payload
 			if err := websocket.JSON.Receive(p2.Conn, &payload); err != nil {
 				log.Println(p2.Name, "disconnected. Cause:", err.Error())
